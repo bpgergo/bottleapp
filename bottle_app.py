@@ -9,9 +9,10 @@ from bottle import default_app, route, run, template, redirect
 #sqlalchemy engine setup with mysql
 mysql_connect_string = 'mysql+mysqldb://%s:%s@%s/%s?charset=utf8' % (db_user, db_password, db_host, db_dbname)
 from sqlalchemy import create_engine
-#recycle and timeout are mysql+hosting specific settings to avoid Lost connection... error.
-#see http://stackoverflow.com/questions/28719982/how-should-i-use-sqlalchemy-session-in-bottle-app-to-avoid-lost-connection-to-m
-engine = create_engine(mysql_connect_string, pool_recycle=499, pool_timeout=20)
+#pool recicle set to 1 min
+#because the pythonanywhere mysql server will close conecctions in a few mins
+#see http://docs.sqlalchemy.org/en/rel_0_7/core/engines.html?highlight=pool_recycle
+engine = create_engine(mysql_connect_string, pool_recycle=60)
 
 from sqlalchemy import MetaData, Table, Column, Integer, String, Float, SmallInteger
 #sqlalchemy model class for table 'nevek'
@@ -24,9 +25,11 @@ nevek_table = Table('nevek', meta,
     Column('play', Integer),
     Column('kmp', Float)
 )
+
 #get records from table nevek with sqlalchemy
 def get_nevek_from_db():
-    return engine.execute(nevek_table.select())
+    result = engine.execute(nevek_table.select())
+    return result
 
 #basic handler will redirect to nevek
 @route('/')
