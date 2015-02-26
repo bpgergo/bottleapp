@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Nevek</title>
+<title>Title</title>
 </head>
 <body>
   %include
