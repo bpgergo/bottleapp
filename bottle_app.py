@@ -14,7 +14,6 @@ def nevek():
 @route('/ranks')
 def ranks():
     url = request.query.get('url')
-    print("url:"+url)
     res = template('ranks-obj', ranks=get_ranks_from_db(url))
 
     return res

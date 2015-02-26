@@ -43,7 +43,6 @@ def inner_get_ranks_from_db(url):
     session = Session()
     page_from_db = session.query(Page).filter(Page.url == url).first()
     if page_from_db:
-        print("page_from_db found, id:"+str(page_from_db.id))
         result = session.query(Ranks).filter(Ranks.page_id == page_from_db.id).all()
         session.close()
     return page_from_db, result
@@ -51,7 +50,6 @@ def inner_get_ranks_from_db(url):
 def get_ranks_from_db(url):
     page, ranks = inner_get_ranks_from_db(url)
     if not ranks:
-        print("scrapping url... "+url)
         scrap = PairRankPage(url)
         if scrap.is_ok():
             save_page(scrap, scrap.records)
