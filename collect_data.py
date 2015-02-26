@@ -30,7 +30,14 @@ class PairRankPage(Page):
         #parse html
         tree = html.fromstring(page.text)
         #get date from <HEAD><TITLE>2015-01-22 &nbsp;Pala csutortok 2015.01.22</TITLE>
-        self.ts = datetime.strptime(tree.xpath('//head/title/text()')[0].split(' ')[0], '%Y-%m-%d')
+        title = tree.xpath('//head/title/text()')
+        if title:
+            date = title[0].split(' ')
+            if date:
+                try:
+                    self.ts = datetime.strptime(date[0], '%Y-%m-%d')
+                except ValueError:
+                    self.ts = None
         #get records from the <PRE> tag that contains plain text in the follwoing form
         self.records = [Ranks.create_from_tuple(item) for item in
             filter(bool, map(self.get_pair_rank_tuple, tree.xpath('//pre/text()')[0].split('\r\n')))]
@@ -51,5 +58,6 @@ if __name__ == '__main__':
         for i in parsed.records:
             print(i)
         return parsed
-    p = get_url('http://palatinusbridge.hu/mezhon/eredmenyek/2015palaered/csutortok/pc150122.htm')
+    p = get_url('http://palatinusbridge.hu/mezhon/eredmenyek/2015palaered/csutortok/pc150101.htm')
+        #get_url('http://palatinusbridge.hu/mezhon/eredmenyek/2015palaered/csutortok/pc150122.htm')
     print(p)
