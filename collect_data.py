@@ -39,8 +39,10 @@ class PairRankPage(Page):
                 except ValueError:
                     self.ts = None
         #get records from the <PRE> tag that contains plain text in the follwoing form
-        self.records = [Ranks.create_from_tuple(item) for item in
-            filter(bool, map(self.get_pair_rank_tuple, tree.xpath('//pre/text()')[0].split('\r\n')))]
+        content = tree.xpath('//pre/text()')
+        if content:
+            self.records = [Ranks.create_from_tuple(item) for item in
+                filter(bool, map(self.get_pair_rank_tuple, content[0].split('\r\n')))]
 
     def is_ok(self):
         return bool(self.url) and bool(self.ts) and bool(self.records)
