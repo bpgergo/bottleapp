@@ -25,7 +25,7 @@ class Page(Base):
     #ranks = relationship("Ranks", order_by="Ranks.id", backref="page")
 
     def __repr__(self):
-        return "<Page(id=%s, url='%s', ts=%s" % (
+        return "<Page(id=%s, url='%s', ts=%s)>" % (
             self.id, self.url, str(self.ts))
 
 #helper class, more like a struct in C, defined by name and fields
@@ -47,17 +47,18 @@ class Ranks(Base):
     @classmethod
     def create_from_tuple(self, tup):
         rank_tup = RankTuple(*tup)
+        #Ranks(**RankTuple(*tup))
         result = Ranks()
         result.rank = rank_tup.rank
         result.pair = rank_tup.pair
         result.name1 = rank_tup.name1
-        result.name2 = rank_tup.name2 #.encode('utf-8')
+        result.name2 = rank_tup.name2
         result.score = rank_tup.score.replace(',', '.')
         result.percentage = rank_tup.percentage.replace(',', '.')
         return result
 
     def __repr__(self):
-        return "<PairRank(id=%s, page_id=%s, name1='%s', name2='%s', score=%s, percentage=%s" % (
+        return "<Rank(id=%s, page_id=%s, name1='%s', name2='%s', score=%s, percentage=%s)>" % (
             self.id, self.page_id, self.name1, self.name2, self.score, self.percentage)
 
 

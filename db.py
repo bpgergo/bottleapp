@@ -9,7 +9,7 @@ from models import Page, Ranks, Nevek
 from collect_data import PairRankPage
 
 #pool recycle set to 1 min
-#because the pythonanywhere mysql server will close conecctions in a few mins
+#because the pythonanywhere mysql server will close connections in a few mins
 #see http://docs.sqlalchemy.org/en/rel_0_7/core/engines.html?highlight=pool_recycle
 engine = create_engine(mysql_connect_string, pool_recycle=60)
 # create a configured "Session" class
@@ -21,17 +21,31 @@ def get_nevek_from_db():
     result = engine.execute(Nevek.__table__.select())
     return result
 
+
+'''
+search for page by url
+if page does not exists, save page into db
+if page already exists, update the timestamp
+if page already exists, then delete child records (that is Ranks)
+save list of ranks assigned to the page as child records of the page
+'''
 def save_page(page, ranks=None):
     session = Session()
+    session.expire_on_commit = False
+    #search for page by url
     page_from_db = session.query(Page).filter(Page.url == page.url).first()
     if not page_from_db:
+        #if page does not exists, save page into db
         page.ts = datetime.now()
         session.add(page)
     else:
         page.id = page_from_db.id
+        #if page already exists, update the timestamp
         session.query(Page).filter(Page.id == page_from_db.id).update({"ts": page.ts})
+        #if page already exists, then delete child records (that is Ranks)
         session.query(Ranks).filter(Ranks.page_id == page.id).delete()
     session.flush()
+    #save list of ranks assigned to the page as child records of the page
     if ranks:
         for rank in ranks:
             rank.page_id = page.id
@@ -39,23 +53,36 @@ def save_page(page, ranks=None):
     session.commit()
     session.close()
 
-def inner_get_ranks_from_db(url):
-    result = None
+'''get page and associated ranks records from the db'''
+def get_ranks_from_db(url):
+    ranks = None
     session = Session()
     page_from_db = session.query(Page).filter(Page.url == url).first()
     if page_from_db:
-        result = session.query(Ranks).filter(Ranks.page_id == page_from_db.id).all()
+        ranks = session.query(Ranks).filter(Ranks.page_id == page_from_db.id).all()
         session.close()
-    return page_from_db, result
+    return page_from_db, ranks
 
-def get_ranks_from_db(url):
-    page, ranks = inner_get_ranks_from_db(url)
-    if not ranks:
-        scrap = PairRankPage(url)
-        if scrap.is_ok():
-            save_page(scrap, scrap.records)
-            page, ranks = inner_get_ranks_from_db(url)
-    return ranks
+'''
+get page and associated ranks records from the db
+if ranks does not exists in the db, scrap ranks (load url, parse the loaded webpage)
+if scrap was successful, then save page and ranks to db and then reload (
+(reload from db after save would not be necessary)
+'''
+def get_ranks_for_url(url):
+    page, ranks = get_ranks_from_db(url)
+    if ranks:
+        return ranks
+    else:
+        scrapped_page = PairRankPage(url)
+        scrapped_page.download_and_parse()
+        if scrapped_page.is_ok():
+            save_page(scrapped_page, scrapped_page.ranks)
+            #page, ranks = get_ranks_from_db(url)
+            #return ranks
+            return scrapped_page.ranks
+    return None
+
 
 
 

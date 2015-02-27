@@ -1,6 +1,6 @@
 #web framework imports
 from bottle import default_app, route, run, template, redirect, request
-from db import get_nevek_from_db, get_ranks_from_db
+from db import get_nevek_from_db, get_ranks_for_url
 
 #basic handler will redirect to nevek
 @route('/')
@@ -14,7 +14,7 @@ def nevek():
 @route('/ranks')
 def ranks():
     url = request.query.get('url')
-    res = template('ranks-obj', ranks=get_ranks_from_db(url))
+    res = template('ranks-obj', ranks=get_ranks_for_url(url))
 
     return res
 

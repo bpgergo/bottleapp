@@ -24,9 +24,9 @@ class PairRankPage(Page):
     example:
     http://palatinusbridge.hu/mezhon/eredmenyek/2015palaered/csutortok/pc150122.htm
     '''
-    def parse_pair_rank_page(self, url):
+    def download_and_parse(self):
         #load url
-        page = requests.get(url)
+        page = requests.get(self.url)
         #parse html
         tree = html.fromstring(page.text)
         #get date from <HEAD><TITLE>2015-01-22 &nbsp;Pala csutortok 2015.01.22</TITLE>
@@ -41,23 +41,23 @@ class PairRankPage(Page):
         #get records from the <PRE> tag that contains plain text in the follwoing form
         content = tree.xpath('//pre/text()')
         if content:
-            self.records = [Ranks.create_from_tuple(item) for item in
+            self.ranks = [Ranks.create_from_tuple(item) for item in
                 filter(bool, map(self.get_pair_rank_tuple, content[0].split('\r\n')))]
 
     def is_ok(self):
-        return bool(self.url) and bool(self.ts) and bool(self.records)
+        return bool(self.url) and bool(self.ts) and bool(self.ranks)
 
     def __init__(self, url):
         self.url = url
-        self.records = None
-        self.parse_pair_rank_page(url)
+        self.ranks = None
 
 if __name__ == '__main__':
     def get_url(url):
         parsed = PairRankPage(url)
+        parsed.download_and_parse()
         print(parsed.url)
         print(parsed.ts)
-        for i in parsed.records:
+        for i in parsed.ranks:
             print(i)
         return parsed
     p = get_url('http://palatinusbridge.hu/mezhon/eredmenyek/2015palaered/csutortok/pc150101.htm')
