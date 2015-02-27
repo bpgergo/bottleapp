@@ -1,6 +1,7 @@
-from db_params import db_dbname, db_host, db_password, db_user
+from db_params import db_dbname, db_host, db_password, db_user, db_driver_name
 #sqlalchemy engine setup with mysql
-mysql_connect_string = 'mysql+mysqldb://%s:%s@%s/%s?charset=utf8' % (db_user, db_password, db_host, db_dbname)
+mysql_connect_string = '%s://%s:%s@%s/%s?charset=utf8' \
+    % (db_driver_name, db_user, db_password, db_host, db_dbname)
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
