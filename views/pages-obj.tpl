@@ -6,7 +6,7 @@
 </tr>
 % for page in pages:
     <tr>
-    <td>{{ page.url }}</td>
+    <td> <a href="{{ page.url }}">{{ page.url }}</a></td>
     <td>{{ page.ts }}</td>
     <td> <a href="/ranks?url={{page.url}}">Ranks</a> </td>
     </tr>

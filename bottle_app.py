@@ -5,7 +5,7 @@ from db import get_nevek_from_db, get_ranks_for_url, get_pages_from_db
 #basic handler will redirect to nevek
 @route('/')
 def hello_world():
-    redirect('/nevek')
+    redirect('/pages')
 
 @route('/nevek')
 def nevek():
