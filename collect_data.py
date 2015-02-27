@@ -8,7 +8,7 @@ from datetime import datetime
 class PairRankPage(Page):
 
     '''
-    Extra data from line of text into a tuple using regexp
+    Extract data from line of text into a tuple using regexp
     example input:
        1    15  300,1    69,5  Mezei Katalin - Sebes Gabor
     returns:
@@ -38,7 +38,7 @@ class PairRankPage(Page):
                     self.ts = datetime.strptime(date[0], '%Y-%m-%d')
                 except ValueError:
                     self.ts = None
-        #get records from the <PRE> tag that contains plain text in the follwoing form
+        #get records from the <PRE> tag that contains plain text in the following form
         content = tree.xpath('//pre/text()')
         if content:
             self.ranks = [Ranks.create_from_tuple(item) for item in
