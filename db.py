@@ -21,6 +21,10 @@ def get_nevek_from_db():
     result = engine.execute(Nevek.__table__.select())
     return result
 
+#get records from table nevek with sqlalchemy
+def get_pages_from_db():
+    result = engine.execute(Page.__table__.select())
+    return result
 
 '''
 search for page by url
