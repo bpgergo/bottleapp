@@ -2,9 +2,9 @@
 from bottle import default_app, route, run, template, redirect, request
 from db import get_nevek_from_db, get_ranks_for_url, get_pages_from_db
 
-#basic handler will redirect to nevek
+#basic handler will redirect to pages
 @route('/')
-def hello_world():
+def redirect():
     redirect('/pages')
 
 @route('/nevek')
@@ -20,7 +20,6 @@ def pages():
 def ranks():
     url = request.query.get('url')
     res = template('ranks-obj', ranks=get_ranks_for_url(url))
-
     return res
 
 
