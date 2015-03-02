@@ -16,19 +16,25 @@ class Palatinus(Crawler):
         # http://palatinusbridge.hu/mezhon/eredmenyek/2014palaered/hetfo/
         self.day_pattern = '[a-z]{4,9}/\Z'
 
-    def visit(self, link, source=None):
+    '''def visit(self, link, source=None):
         if match(link.referrer+self.target_pattern, link.url):
             logging.info('saved to db:%s', repr(link.url))
-            get_ranks_for_url(link.url)
+            get_ranks_for_url(link.url)'''
 
 
     #rule that filters interesting pages
     def follow(self, link):
-        logging.debug('checking pattern1:%s' % self.root_url + self.day_pattern)
-        logging.debug('checking pattern2:%s' % link.referrer + self.target_pattern)
-        result = bool(match(link.referrer + self.target_pattern, link.url)) \
-            or bool(match(self.root_url + self.day_pattern, link.url))
-        logging.debug('follow? %s - link:%s, from:%s', str(result), repr(link.url), link.referrer)
+        result = False
+        logging.debug('checking pattern:%s' % link.referrer + self.target_pattern)
+        if match(link.referrer + self.target_pattern, link.url):
+            logging.debug('target found')
+            get_ranks_for_url(link.url)
+
+        logging.debug('checking pattern:%s' % self.root_url + self.day_pattern)
+        if match(self.root_url + self.day_pattern, link.url):
+            logging.debug('will follow link:%s, from:%s', repr(link.url), link.referrer)
+            result = True
+
         return result
 
 

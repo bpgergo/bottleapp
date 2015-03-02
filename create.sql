@@ -7,17 +7,6 @@ create table days (
 constraint fdx primary key (nap)
 );
 
-create table nevek (
-  id integer not null,
-  name varchar(24) not null,
-  lev smallint not null,
-  point double precision,
-  play integer,
-  kmp double precision,
-constraint nd0 primary key (id),
-constraint nd1 unique (name)
-) CHARSET=UTF8;
-
 create table hist (
   id integer not null,
   nap integer not null,
@@ -30,11 +19,31 @@ constraint td1 unique (id,nap)
   );
 
 
-insert into nevek values (3, 'Nagy Jozsef', 3, 3.3, 4, 3.5);
+create table nevek (
+  id serial not null,
+  name varchar(250) not null,
+  lev smallint ,
+  point double ,
+  play integer,
+  kmp double,
+constraint nd0 primary key (id),
+constraint nd1 unique (name)
+)
+CHARSET=UTF8;
 
-insert into nevek values (2, 'Nagy Laci', 2, 2.3, 3, 2.5);
 
-insert into nevek values (1, 'Kiss Jozsef', 1, 1.3, 2, 1.5);
+create table alias(
+id serial not null,
+alias varchar(250) not null,
+name varchar(250) not null,
+generator varchar(250) ,
+approved integer default 0,
+constraint pk_alias primary key (id),
+constraint uk_alias unique (alias, name, generator)
+)
+CHARSET=UTF8;
+
+
 
 
 create table page (
@@ -50,10 +59,13 @@ create table ranks (
   page_id BIGINT UNSIGNED not null,
   rank integer not null,
   pair integer not null,
-  score double precision not null,
-  percentage double precision not null,
+  score double not null,
+  percentage double not null,
+  tie integer,
   name1 varchar(250) not null,
   name2 varchar(250) not null,
+  name3 varchar(250),
 constraint pk_pair_rank primary key (id),
 constraint fk_pair_rank_page foreign key (page_id) references page(id)
 ) CHARSET=UTF8;
+

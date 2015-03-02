@@ -5,8 +5,12 @@ mysql_connect_string = '%s://%s:%s@%s/%s?charset=utf8' \
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
-from models import Page, Ranks, Nevek
-from collect_data import PairRankPage
+from models import Page, Ranks, Nevek, Alias
+from parse_palatinus import ParsePage
+from name_util import clean_name, weak_vowel_shorten #, match_levenshtein
+import logging
+from sqlalchemy.exc import IntegrityError
+from difflib import get_close_matches
 
 #pool recycle set to 1 min
 #because the pythonanywhere mysql server will close connections in a few mins
@@ -19,6 +23,10 @@ Session = sessionmaker(bind=engine)
 #get records from table nevek with sqlalchemy
 def get_nevek_from_db():
     result = engine.execute(Nevek.__table__.select())
+    return result
+
+def get_alias_from_db():
+    result = engine.execute(Alias.__table__.select())
     return result
 
 #get records from table nevek with sqlalchemy
@@ -78,7 +86,7 @@ def get_ranks_for_url(url):
     if ranks:
         return ranks
     else:
-        scrapped_page = PairRankPage(url)
+        scrapped_page = ParsePage(url)
         scrapped_page.download_and_parse()
         if scrapped_page.is_ok():
             save_page(scrapped_page, scrapped_page.ranks)
@@ -89,39 +97,66 @@ def get_ranks_for_url(url):
 
 
 
+def populate_names_from_ranks():
+    session = Session()
+    for rank in session.query(Ranks).all():
+        rec = Nevek()
+        rec.name = clean_name(rank.name1)
+        logging.debug('saving %s' % rec.name)
+        try:
+            session.add(rec)
+            session.flush()
+            session.commit()
+        except IntegrityError:
+            logging.debug('already exists %s' % rec.name)
+            session.rollback()
+
+def get_names_for_matching():
+    session = Session()
+    return set([nevek.name for nevek in session.query(Nevek).all()])
+
+
+def save_alias(alias, name, generator):
+    session = Session()
+    rec = Alias()
+    rec.alias = alias
+    rec.name = name
+    rec.generator = generator
+    logging.debug(rec)
+    logging.debug('saving... %s' % rec)
+    try:
+        session.add(rec)
+        session.flush()
+        session.commit()
+    except IntegrityError:
+        logging.debug('already exists %s' % rec)
+        session.rollback()
+
+
+def generate_aliases_difflib():
+    names = get_names_for_matching()
+    for name in names:
+        matches = get_close_matches(name, names, n=3, cutoff=0.8)
+        if matches:
+            for match in matches:
+                if match != name and match[0] == name[0]:
+                    save_alias(match, name, 'difflib')
+'''
+def generate_aliases_levenshtein():
+    names = get_names()
+    for name in names:
+        for other_name in names:
+            if name != other_name and match_levenshtein(name, other_name):
+                save_alias(other_name, name, 'levenshtein')
+'''
 
 if __name__ == '__main__':
-    #tests stub
-    page1 = Page()
+    logging.basicConfig(level=logging.DEBUG)
+    logging.info(datetime.now())
+    #populate_names_from_ranks()
+    #logging.info(datetime.now())
+    #generate_aliases_levenshtein()
+    #logging.info(datetime.now())
+    generate_aliases_difflib()
+    logging.info(datetime.now())
 
-
-    print(page1)
-    page1.url = 'http://url24.com'
-    page1.ts = datetime.now()
-    print(page1)
-
-    rank = Ranks()
-    rank.name2 = 'name2'
-    rank.name1 = 'name1'
-    rank.pair = 12
-    rank.percentage = 3.3
-    rank.rank = 3
-    rank.score = 1.2345
-
-    rank2 = Ranks()
-    rank2.name2 = '2name2'
-    rank2.name1 = '2name1'
-    rank2.pair = 212
-    rank2.percentage = 23.3
-    rank2.rank = 23
-    rank2.score = 21.2345
-
-    tu = ('27', '8', '230,0', '36,9', 'Fischer Kati', 'Eipel Judit')
-    '''print(tu)
-    rt = RankTuple(*tu)
-    print(rt)
-    r = Ranks(**rt._asdict())'''
-    r = Ranks.create_from_tuple(tu)
-    print(r)
-
-    save_page(page1, [rank, rank2, r])

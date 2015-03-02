@@ -1,8 +1,7 @@
-from collections import namedtuple
 from sqlalchemy.ext.declarative import declarative_base
 Base = declarative_base()
 from sqlalchemy import Column, ForeignKey, \
-    Integer, String, Float, SmallInteger, DateTime
+    Integer, String, Float, SmallInteger, DateTime, Boolean
 #from sqlalchemy.orm import relationship, backref
 
 
@@ -16,6 +15,18 @@ class Nevek(Base):
     play = Column(Integer)
     kmp = Column(Float)
 
+#sqlalchemy model class for table 'alias'
+class Alias(Base):
+    __tablename__ = 'alias'
+    alias = Column(String(250), primary_key=True)
+    name = Column(String(250), nullable=False)
+    generator = Column(String(250))
+    approved = Column(Boolean)
+
+    def __repr__(self):
+        return "<Alias(name=%s, alias='%s', generator=%s)>" % (
+            self.name, self.alias, self.generator)
+
 
 class Page(Base):
     __tablename__ = 'page'
@@ -28,8 +39,6 @@ class Page(Base):
         return "<Page(id=%s, url='%s', ts=%s)>" % (
             self.id, self.url, str(self.ts))
 
-#helper class, more like a struct in C, defined by name and fields
-RankTuple = namedtuple('RankTuple', 'rank, pair, score, percentage, name1, name2')
 
 
 class Ranks(Base):
@@ -40,26 +49,15 @@ class Ranks(Base):
     pair = Column(Integer, nullable=False)
     score = Column(Float, nullable=False)
     percentage = Column(Float, nullable=False)
+    tie = Column(Integer)
     name1 = Column(String(250), nullable=False)
     name2 = Column(String(250), nullable=False)
+    name3 = Column(String(250))
     #page = relationship("Page", backref=backref('page', order_by=id))
 
-    @classmethod
-    def create_from_tuple(self, tup):
-        rank_tup = RankTuple(*tup)
-        #Ranks(**RankTuple(*tup))
-        result = Ranks()
-        result.rank = rank_tup.rank
-        result.pair = rank_tup.pair
-        result.name1 = rank_tup.name1
-        result.name2 = rank_tup.name2
-        result.score = rank_tup.score.replace(',', '.')
-        result.percentage = rank_tup.percentage.replace(',', '.')
-        return result
-
     def __repr__(self):
-        return "<Rank(id=%s, page_id=%s, name1='%s', name2='%s', score=%s, percentage=%s)>" % (
-            self.id, self.page_id, self.name1, self.name2, self.score, self.percentage)
+        return "<Rank(id=%s, page_id=%s, name1='%s', name2='%s', name3='%s', score=%s, percentage=%s, rank=%s, tie='%s')>" % (
+            self.id, self.page_id, self.name1, self.name2, self.name3, self.score, self.percentage, self.rank, self.tie)
 
 
 if __name__ == '__main__':
