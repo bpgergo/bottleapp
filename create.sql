@@ -47,14 +47,23 @@ constraint uniq_alias unique (name, alias1, alias2, alias3, alias4, alias5)
 )
 CHARSET=UTF8;
 
-
-
-create table page (
+create table crawl (
     id serial not null,
     url varchar(250) not null,
     ts timestamp not null,
     constraint pk_page primary key (id),
-    constraint uniq_page unique (url)
+    constraint uniq_crawl unique (url)
+) CHARSET=UTF8;
+
+
+create table page (
+    id serial not null,
+    crawl_id BIGINT unsigned not null,
+    url varchar(250) not null,
+    ts timestamp not null,
+    constraint pk_page primary key (id),
+    constraint uniq_page unique (url),
+    constraint fk_page_crawl foreign key (crawl_id) references crawl(id)
 ) CHARSET=UTF8;
 
 create table ranks (

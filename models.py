@@ -15,8 +15,9 @@ class Nevek(Base):
     play = Column(Integer)
     kmp = Column(Float)
     def __repr__(self):
-        return "<Nev(name=%s, point=%s)>" % (
-            self.name, self.point)
+        return self.name
+        #return "<Nev(name=%s, point=%s)>" % (
+        #    self.name, self.point)
 
 
 #sqlalchemy model class for table 'alias'
@@ -37,19 +38,36 @@ class Alias(Base):
             self.name, self.alias1, self.alias2, self.alias3, self.alias4, self.alias5, self.generator)
 
 
-class Page(Base):
-    __tablename__ = 'page'
+class Crawl(Base):
+    __tablename__ = 'crawl'
     id = Column(Integer, primary_key=True, autoincrement=True)
     url = Column(String(250), nullable=False, unique=True)
     ts = Column(DateTime, nullable=False)
-    #ranks = relationship("Ranks", order_by="Ranks.id", backref="page")
 
     def __repr__(self):
         type_of_ranks = 'None'
         if self.ranks:
             type_of_ranks = str(type(self.ranks[0]))
-        return "<Page(id=%s, url='%s', ts=%s, num of ranks=%s), type of ranks:%s>" % (
-            self.id, self.url, str(self.ts), str(len(self.ranks)), type_of_ranks)
+        return "<Crawl(id=%s, url='%s', ts=%s>" % (
+            self.id, self.url, str(self.ts))
+
+
+class Page(Base):
+    __tablename__ = 'page'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    crawl_id = Column(Integer, ForeignKey('crawl.id'), nullable=False)
+    url = Column(String(250), nullable=False, unique=True)
+    ts = Column(DateTime, nullable=False)
+    crawl = relationship("Crawl", foreign_keys=crawl_id, lazy='subquery',
+        single_parent=True, backref=backref("pages"), enable_typechecks=False)
+
+
+    def __repr__(self):
+        type_of_ranks = 'None'
+        if self.ranks:
+            type_of_ranks = str(type(self.ranks[0]))
+        return "<Page(id=%s, url='%s', ts=%s, num of ranks=%s)>" % (
+            self.id, self.url, str(self.ts), str(len(self.ranks)))
 
 
 

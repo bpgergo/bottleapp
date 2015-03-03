@@ -1,7 +1,6 @@
 #web framework imports
 from bottle import default_app, route, run, template, redirect, request
-from db import get_nevek_from_db, get_ranks_for_url, get_pages_from_db, get_alias_from_db
-from db import disambiguation
+from db import get_crawls_from_db, get_nevek_from_db, get_ranks_for_url, get_pages_for_crawl_url, get_alias_from_db, disambiguation_url
 from crawl_palatinus import crawl_url
 from multiprocessing import Pool
 import logging
@@ -21,9 +20,15 @@ def alias():
     return template('alias-obj', aliases=get_alias_from_db())
 
 
+@route('/crawls')
+def crawls():
+    return template('crawls-obj', crawls=get_crawls_from_db())
+
+
 @route('/pages')
 def pages():
-    return template('pages-obj', pages=get_pages_from_db())
+    url = request.query.get('url')
+    return template('pages-obj', pages=get_pages_for_crawl_url(url))
 
 
 @route('/ranks')
@@ -37,37 +42,30 @@ def ranks():
 def new_item():
     if request.GET.get('start_crawl','').strip():
         url = request.GET.get('crawl_url', '').strip()
-        process_url_async(url)
+        crawl_url_async(url)
         return '<p>The new crawl task was created, ' \
-            'the results should be available soon <a href=/pages>here</a></p>'
+            'the results should be available soon <a href=/pages?url=%s>here</a></p>' % url
     elif request.GET.get('start_disambiguation','').strip():
-        disambiguation_async()
-        return '<p>Name disambiguation process has started, it may take a while...</p>'
-
+        url = request.GET.get('disambiguation_url', '').strip()
+        disambiguation_url_async(url)
+        return '<p>Name disambiguation of url has started, ' \
+            'the results should be available soon <a href=/ranks?url=%s>here</a></p>' % url
     else:
         return template('controller.tpl')
 
 
-def disambiguation(url):
-    logging.debug('%s : start disambiguation names' % (datetime.now()))
-    disambiguation()
-    logging.debug('%s : end disambiguation aliases' % (datetime.now()))
-
-def disambiguation_async():
-    pool = Pool(1)
-    urls = [None]
-    pool.map_async(disambiguation, urls)
-
-def process_url(url):
-    logging.debug('%s : start crawling url:%s' % (datetime.now(), url))
-    crawl_url(url)
-    logging.debug('%s : end crawling url:%s' % (datetime.now(), url))
-
-def process_url_async(url):
+def wrap_async(func, url):
     pool = Pool(1)
     urls = [url]
-    pool.map_async(process_url, urls)
+    pool.map_async(func, urls)
 
+
+def disambiguation_url_async(url):
+    wrap_async(disambiguation_url, url)
+
+
+def crawl_url_async(url):
+    wrap_async(crawl_url, url)
 
 #this will be imported and run by the wsgi.py (in hosted env)
 application = default_app()
@@ -76,3 +74,4 @@ application = default_app()
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     run(application, debug=True, reload=True)
+    #disambiguation_url('http://palatinusbridge.hu/mezhon/eredmenyek/2015palaered/')

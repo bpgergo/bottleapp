@@ -6,7 +6,7 @@ mysql_connect_string = '%s://%s:%s@%s/%s?charset=utf8' \
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
-from models import Page, Ranks, Nevek, Alias
+from models import Crawl, Page, Ranks, Nevek, Alias
 from parse_palatinus import ParsePage
 from name_util import clean_name, weak_vowel_shorten #, match_levenshtein
 import logging
@@ -24,17 +24,54 @@ Session = sessionmaker(bind=engine)
 
 #get records from table nevek with sqlalchemy
 def get_nevek_from_db():
-    result = engine.execute(Nevek.__table__.select())
+    result = engine.execute(Nevek.__table__.select().order_by(Nevek.name))
     return result
 
 def get_alias_from_db():
-    result = engine.execute(Alias.__table__.select())
+    result = engine.execute(Alias.__table__.select().order_by(Alias.name))
     return result
 
 #get records from table nevek with sqlalchemy
 def get_pages_from_db():
     result = engine.execute(Page.__table__.select())
     return result
+
+def get_crawls_from_db():
+    return engine.execute(Crawl.__table__.select())
+
+def get_pages_for_crawl_url(url):
+    session = Session()
+    pages = []
+    crawl = session.query(Crawl).filter(Crawl.url == url).first()
+    if crawl:
+        pages = session.query(Page).filter(Page.crawl_id == crawl.id).all()
+    #session.close()
+    return pages
+
+def save_crawl(url):
+    remove_crawl(url)
+    session = Session()
+    crawl = Crawl(url = url, ts = datetime.now())
+    session.add(crawl)
+    session.commit()
+    crawl_id = crawl.id
+    session.close()
+    return crawl_id
+
+def remove_crawl(url):
+    session = Session()
+    #search for page by url, delete existing data
+    crawl = session.query(Crawl).filter(Crawl.url == url).first()
+
+    if crawl:
+        logging.info('deleting existing crawl id:%s', crawl.id)
+        for page in session.query(Page).filter(Page.crawl_id == crawl.id):
+            remove_page(page.url)
+        session.query(Crawl).filter(Crawl.id == crawl.id).delete()
+        session.flush()
+        session.commit()
+    session.close()
+
 
 def remove_page(url):
     session = Session()
@@ -57,7 +94,6 @@ if page already exists, then delete child records (that is Ranks)
 save list of ranks assigned to the page as child records of the page
 '''
 def save_page(page):
-    result = None
     session = Session()
     page.ts = datetime.now()
     logging.info('about to insert new page:%s', page)
@@ -94,14 +130,14 @@ def get_page_and_ranks_from_db(url):
 scrap ranks (load url, parse the loaded webpage)
 if scrap was successful, then save page and ranks to db and then reload (
 '''
-def save_ranks_for_url(url):
-    scrapped_page = ParsePage(url)
+def save_ranks_for_url(crawl_id, url):
+    scrapped_page = ParsePage(crawl_id, url)
     scrapped_page.download_and_parse()
     if scrapped_page.is_ok():
         logging.debug('url downloaded and parsed:%s', url)
         remove_page(url)
         save_page(scrapped_page)
-        logging.debug('page and ranks saved:%s', scrapped_page)
+
 
 
 '''
@@ -134,12 +170,20 @@ def add_name(name, session=Session()):
             session.rollback()
 
 
-def populate_names_from_ranks():
+def populate_names_from_rank(rank, session):
+    add_name(rank.original_name1, session)
+    add_name(rank.original_name2, session)
+    add_name(rank.original_name3, session)
+
+
+def populate_names_for_page(page, session):
+    for rank in session.query(Ranks).filter(Ranks.page_id == page.id).all():
+        populate_names_from_rank(rank, session)
+
+def populate_names_from_all_ranks():
     session = Session()
     for rank in session.query(Ranks).all():
-        add_name(rank.original_name1, session)
-        add_name(rank.original_name2, session)
-        add_name(rank.original_name3, session)
+        populate_names_from_rank(rank, session)
     session.close()
 
 
@@ -254,38 +298,72 @@ def update_rank_with_aliases(rank, session=Session(), generator='difflib'):
             "name1_id": rank.name1_id, "name2_id": rank.name2_id, "name3_id": rank.name3_id})
         session.commit()
 
+def generate_alias_for_name(name, names, session):
+    matches = get_close_matches(name, names, n=6, cutoff=0.85)
+    #match list always contains the name itself, remove it!
+    matches = list(filter(lambda x: x != name, matches))
+    #rule from experience: remove those matches that start with different char
+    matches = list(filter(lambda x: x[0] == name[0], matches))
+    if matches:
+        logging.debug("match found for name:%s; matches:%s" % (name, matches))
+        save_alias(name, sorted(matches), 'difflib', session)
 
 
-def generate_aliases_difflib():
+def generate_aliases_for_page(page, session):
+    names = get_names_for_matching()
+    for rank in session.query(Ranks).filter(Ranks.page_id == page.id).all():
+        if rank.original_name1:
+            generate_alias_for_name(rank.original_name1, names, session)
+        if rank.original_name1:
+            generate_alias_for_name(rank.original_name1, names, session)
+        if rank.original_name1:
+            generate_alias_for_name(rank.original_name1, names, session)
+
+def generate_all_aliases():
     session = Session()
     names = get_names_for_matching()
     for name in names:
-        matches = get_close_matches(name, names, n=6, cutoff=0.85)
-        #match list always contains the name itself, remove it!
-        matches = list(filter(lambda x: x != name, matches))
-        #rule from experience: remove those matches that start with different char
-        matches = list(filter(lambda x: x[0] == name[0], matches))
-        if matches:
-            logging.debug("match found for name:%s; matches:%s" % (name, matches))
-            save_alias(name, sorted(matches), 'difflib', session)
+        generate_alias_for_name(name, names, session)
     session.commit()
     session.close()
 
-def update_ranks_with_aliases(generator='difflib'):
-    session = Session()
-    for rank in session.query(Ranks).all():
+def update_ranks_with_aliases(ranks, session, generator='difflib'):
+    for rank in ranks:
         update_rank_with_aliases(rank, session, generator)
-    session.close()
 
 
-def disambiguation():
+def disambiguation_page(page, session):
     logging.debug('%s : start collecting names' % (datetime.now()))
-    populate_names_from_ranks()
+    populate_names_for_page(page, session)
+    session.commit()
     logging.debug('%s : start generating aliases' % (datetime.now()))
-    generate_aliases_difflib()
+    generate_aliases_for_page(page, session)
+    session.commit()
     logging.debug('%s : start updating ranks with aliases' % (datetime.now()))
-    update_ranks_with_aliases('difflib')
+    session.commit()
+    update_ranks_with_aliases(session.query(Ranks).filter(Ranks.page_id == page.id) .all(), session, 'difflib')
+
+def disambiguation_url(url):
+    session = Session()
+    crawl = session.query(Crawl).filter(Crawl.url == url).first()
+    for page in session.query(Page).filter(Page.crawl_id == crawl.id).all():
+        disambiguation_page(page, session)
+    session.close()
     logging.debug('%s : finished processing ' % (datetime.now()))
+
+
+def disambiguation_all():
+    logging.debug('%s : start collecting names' % (datetime.now()))
+    populate_names_from_all_ranks()
+    logging.debug('%s : start generating aliases' % (datetime.now()))
+    generate_all_aliases()
+    logging.debug('%s : start updating ranks with aliases' % (datetime.now()))
+    session = Session()
+    update_ranks_with_aliases(session.query(Ranks).all(), session, 'difflib')
+    session.commit()
+    session.close()
+    logging.debug('%s : finished processing ' % (datetime.now()))
+
 
 
 '''

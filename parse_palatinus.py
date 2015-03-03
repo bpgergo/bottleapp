@@ -90,7 +90,8 @@ class ParsePage(Page):
     def is_ok(self):
         return bool(self.url) and bool(self.ts) and bool(self.ranks)
 
-    def __init__(self, url):
+    def __init__(self, crawl_id, url):
+        self.crawl_id = crawl_id
         self.url = url
         self.ranks = []
 

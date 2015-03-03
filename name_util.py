@@ -32,10 +32,7 @@ strip leading and trailing numbers
 def clean_name(name):
     if name:
         name = name.strip()
-        match = re.match('\A[0-9\-]+\s+(.*)\Z', name)
-        if match:
-            name = match.group(1)
-        match = re.match('\A(.*)\s+[0-9\-]+\Z', name)
+        match = re.match('\A[0-9\-]+\s*([\S ]*)\Z', name)
         if match:
             name = match.group(1)
         return name.strip()
@@ -43,6 +40,5 @@ def clean_name(name):
 
 if __name__ == '__main__':
     assert(clean_name('12 Hello Bello') == 'Hello Bello')
-    assert(clean_name('Hello Bello 12') == 'Hello Bello')
     assert(clean_name('-1   Bots Lászlóné') == 'Bots Lászlóné')
-    assert(clean_name(' Bots Lászlóné  -1') == 'Bots Lászlóné')
+    assert(clean_name('1Balog Júlia') == 'Balog Júlia')
