@@ -75,7 +75,7 @@ create table ranks (
   percentage double not null,
   tie integer,
   original_name1 varchar(250) not null,
-  original_name2 varchar(250) not null,
+  original_name2 varchar(250),
   original_name3 varchar(250),
   name1_id bigint unsigned,
   name2_id bigint unsigned,

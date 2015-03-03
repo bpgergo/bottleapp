@@ -81,7 +81,7 @@ class Ranks(Base):
     percentage = Column(Float, nullable=False)
     tie = Column(Integer)
     original_name1 = Column(String(250), nullable=False)
-    original_name2 = Column(String(250), nullable=False)
+    original_name2 = Column(String(250))
     original_name3 = Column(String(250))
     name1_id = Column(Integer, ForeignKey('nevek.id'))
     name2_id = Column(Integer, ForeignKey('nevek.id'))

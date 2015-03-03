@@ -19,6 +19,7 @@ class Palatinus(Crawler):
         # this will match on the end of day urls like
         # http://palatinusbridge.hu/mezhon/eredmenyek/2014palaered/hetfo/
         self.day_pattern = '[a-z]{4,9}/\Z'
+        self.year_pattern = '[0-9]{4}palaered/\Z'
 
 
     #rule that filters interesting pages
@@ -29,8 +30,13 @@ class Palatinus(Crawler):
             logging.debug('target found:%s', link.url)
             save_ranks_for_url(self.crawl_id, link.url)
 
-        logging.debug('checking pattern:%s' % self.root_url + self.day_pattern)
-        if match(self.root_url + self.day_pattern, link.url):
+        logging.debug('checking pattern:%s' % link.referrer + self.day_pattern)
+        if match(link.referrer + self.day_pattern, link.url):
+            logging.debug('will follow link:%s, from:%s', repr(link.url), link.referrer)
+            result = True
+
+        logging.debug('checking pattern:%s' % link.referrer + self.day_pattern)
+        if match(link.referrer + self.year_pattern, link.url):
             logging.debug('will follow link:%s, from:%s', repr(link.url), link.referrer)
             result = True
 
@@ -45,4 +51,4 @@ def crawl_url(url):
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
-    crawl_url('http://palatinusbridge.hu/mezhon/eredmenyek/2013palaered/')
+    crawl_url('http://palatinusbridge.hu/mezhon/eredmenyek/')
