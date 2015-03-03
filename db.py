@@ -249,54 +249,56 @@ def save_alias(name, matches, generator, session):
 def get_nevek_by_name(name, session=Session()):
     return session.query(Nevek).filter(Nevek.name == name).first()
 
-
-def find_alias(name, session=Session(), generator='difflib'):
-    return session.query(Alias).filter(or_(Alias.name == name, Alias.alias1 == name,
-            Alias.alias2 == name, Alias.alias3 == name, Alias.alias4 == name, Alias.alias5 == name))\
-        .filter(Alias.generator==generator).first()
+def find_alias(name, session=Session(), generator='difflib', all_aliases = None):
+    if all_aliases:
+        for alias in all_aliases:
+            if ((alias.name == name or alias.alias1 == name or alias.alias2 == name
+                or alias.alias3 == name or alias.alias4 == name or alias.alias5 == name)
+                and alias.generator == generator):
+                return alias
+    else:
+        return session.query(Alias).filter(or_(Alias.name == name, Alias.alias1 == name,
+                Alias.alias2 == name, Alias.alias3 == name, Alias.alias4 == name, Alias.alias5 == name))\
+            .filter(Alias.generator==generator).first()
 
 '''
 update rank with unified names
 '''
-def update_rank_with_aliases(rank, session=Session(), generator='difflib'):
-    logging.debug("update rank with aliases start:%s", rank)
+def update_rank_with_aliases(rank, session=Session(), generator='difflib', all_aliases = None):
+    logging.debug("--- update rank with aliases start:%s", rank)
     change = False
-    sql = '''select id, name from alias
-        where (name='%s' or alias1='%s' or alias2='%s' or alias3='%s' or alias4='%s' or alias5='%s')
-        and generator = '%s'
-        order by alias limit 1;
-        '''
-    alias = find_alias(rank.original_name1, session, generator)
+    alias = find_alias(rank.original_name1, session, generator, all_aliases)
     if alias:
-        logging.debug("alias 1:%s", alias.name)
+        logging.debug("alias 1 found:%s", alias.name)
         name_rec = get_nevek_by_name(alias.name, session)
         logging.debug("nevek 1:%s", name_rec)
         if name_rec:
             rank.name1_id = name_rec.id
             change = True
-    alias = find_alias(rank.original_name2, session, generator)
+    alias = find_alias(rank.original_name2, session, generator, all_aliases)
     if alias:
-        logging.debug("alias 2:%s", alias.name)
+        logging.debug("alias 2 found :%s", alias.name)
         name_rec = get_nevek_by_name(alias.name, session)
         logging.debug("nevek 2:%s", name_rec)
         if name_rec:
             rank.name2_id = name_rec.id
             change = True
     if rank.original_name3:
-        alias = find_alias(rank.original_name3, session, generator)
+        alias = find_alias(rank.original_name3, session, generator, all_aliases)
         if alias:
-            logging.debug("alias 3:%s", alias.name)
+            logging.debug("alias 3 found:%s", alias.name)
             name_rec = get_nevek_by_name(alias.name, session)
             logging.debug("nevek 3:%s", name_rec)
             if name_rec:
                 rank.name3_id = name_rec.id
                 change = True
     if change:
-        logging.debug("update rank with values:%s",
+        logging.debug("%s update rank with values:%s", str(datetime.now()),
             str({"name1_id": rank.name1_id, "name2_id": rank.name2_id, "name3_id": rank.name3_id}))
-        session.query(Ranks).filter(Ranks.id == rank.id).update({
-            "name1_id": rank.name1_id, "name2_id": rank.name2_id, "name3_id": rank.name3_id})
+        ##session.query(Ranks).filter(Ranks.id == rank.id).update({
+        ##    "name1_id": rank.name1_id, "name2_id": rank.name2_id, "name3_id": rank.name3_id})
         session.commit()
+        logging.debug("%s update rank finished" % str(datetime.now()))
 
 def generate_alias_for_name(name, names, session):
     matches = get_close_matches(name, names, n=6, cutoff=0.85)
@@ -328,8 +330,9 @@ def generate_all_aliases():
     session.close()
 
 def update_ranks_with_aliases(ranks, session, generator='difflib'):
+    all_aliases = session.query(Alias).all()
     for rank in ranks:
-        update_rank_with_aliases(rank, session, generator)
+        update_rank_with_aliases(rank, session, generator, all_aliases)
 
 
 def disambiguation_page(page, session):
@@ -414,6 +417,10 @@ def test_update_rank_with_aliases():
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     logging.info(datetime.now())
-    update_ranks_with_aliases('difflib')
-    logging.info(datetime.now())
+    #update_ranks_with_aliases('difflib')
+    session = Session()
+    update_ranks_with_aliases(session.query(Ranks).all(), session, 'difflib')
+    session.commit()
+    session.close()
+    logging.info('finished', datetime.now())
 

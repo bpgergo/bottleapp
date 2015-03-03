@@ -74,4 +74,4 @@ application = default_app()
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     run(application, debug=True, reload=True)
-    #disambiguation_url('http://palatinusbridge.hu/mezhon/eredmenyek/2015palaered/')
+    #disambiguation_url('http://palatinusbridge.hu/mezhon/eredmenyek/')
