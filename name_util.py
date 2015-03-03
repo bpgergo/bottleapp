@@ -25,16 +25,21 @@ def match_levenshtein(instring1, instring2):
             or Levenshtein.distance(string1, string2) == 1)
 '''
 
+'''
+strip leading and trailing whitespace
+strip leading and trailing numbers
+'''
 def clean_name(name):
-    name = name.strip()
-    match = re.match('\A[0-9\-]+\s+(.*)\Z', name)
-    if match:
-        name = match.group(1)
-    match = re.match('\A(.*)\s+[0-9\-]+\Z', name)
-    if match:
-        name = match.group(1)
-    return name.strip()
-
+    if name:
+        name = name.strip()
+        match = re.match('\A[0-9\-]+\s+(.*)\Z', name)
+        if match:
+            name = match.group(1)
+        match = re.match('\A(.*)\s+[0-9\-]+\Z', name)
+        if match:
+            name = match.group(1)
+        return name.strip()
+    return None
 
 if __name__ == '__main__':
     assert(clean_name('12 Hello Bello') == 'Hello Bello')

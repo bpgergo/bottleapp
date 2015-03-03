@@ -11,9 +11,12 @@ import logging
 RankTuple = namedtuple('RankTuple', 'rank, pair, score, percentage, names')
 RankTupleTie = namedtuple('RankTupleTie', 'rank, pair, score, percentage, tie, names')
 
+'''
+download and parse pages like these:
+ http://palatinusbridge.hu/mezhon/eredmenyek/2013palaered/vasarnap/pv131215.htm
+ http://palatinusbridge.hu/mezhon/eredmenyek/2015palaered/csutortok/pc150122.htm
+'''
 class ParsePage(Page):
-
-
 
     '''
     Extract data from line of text into a tuple using regexp
@@ -24,6 +27,7 @@ class ParsePage(Page):
     returns: Rank instance
     '''
     def convert_line_to_rank(self, line):
+        logging.debug('converting line:%s' % line)
         #this pattern matches lines that contain tie column
         m_with_tie = re.match('(\d+)\s+(\d+)\s+([0-9,]+)[ *]+([0-9,]+)\s+([0-9,]+)\s+(.+)', line.strip())
         result = None
@@ -42,11 +46,11 @@ class ParsePage(Page):
             logging.debug('names:%s' % rank_tuple.names)
             names = rank_tuple.names.split(' - ')
             if len(names) > 0:
-                result.name1 = names[0].strip() #.encode('utf-8')
+                result.original_name1 = names[0].strip()
             if len(names) > 1:
-                result.name2 = names[1].strip() #.encode('utf-8')
+                result.original_name2 = names[1].strip()
             if len(names) > 2:
-                result.name3 = names[2].strip() #.encode('utf-8')
+                result.original_name3 = names[2].strip()
             result.score = rank_tuple.score.replace(',', '.')
             result.percentage = rank_tuple.percentage.replace(',', '.')
             try:
@@ -76,27 +80,31 @@ class ParsePage(Page):
                     self.ts = None
         #get records from the <PRE> tag that contains plain text in the following form
         content = tree.xpath('//pre/text()')
+        #logging.debug(content)
+        line_end = '\r\n'
+        if line_end not in content:
+            line_end = '\n'
         if content:
-            self.ranks = filter(bool, map(self.convert_line_to_rank, content[0].split('\r\n')))
+            self.ranks = list(filter(bool, map(self.convert_line_to_rank, content[0].split(line_end))))
 
     def is_ok(self):
         return bool(self.url) and bool(self.ts) and bool(self.ranks)
 
     def __init__(self, url):
         self.url = url
-        self.ranks = None
+        self.ranks = []
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     def get_url(url):
         parsed = ParsePage(url)
+        #line = '    1     3     31  64,6  Fürst Panni - Zalai Mari       '
+        #converted = parsed.convert_line_to_rank(line)
+        #logging.debug(converted)
         parsed.download_and_parse()
-        #print(parsed.url)
-        #print(parsed.ts)
-        #for i in parsed.ranks:
-        #    print(i)
         return parsed
-    p = get_url('http://palatinusbridge.hu/mezhon/eredmenyek/2015palaered/szombat/pz150117.htm')
+    p = get_url('http://palatinusbridge.hu/mezhon/eredmenyek/2013palaered/vasarnap/pv131215.htm')
+        #'http://palatinusbridge.hu/mezhon/eredmenyek/2015palaered/szombat/pz150117.htm')
         #'http://palatinusbridge.hu/mezhon/eredmenyek/2015palaered/csutortok/pc150101.htm')
         #get_url('http://palatinusbridge.hu/mezhon/eredmenyek/2015palaered/csutortok/pc150122.htm')
-    #print(p)
+    logging.debug(p)

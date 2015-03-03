@@ -1,8 +1,11 @@
 from pattern.web import Crawler, DEPTH, HTMLLinkParser, FIFO
-from db import get_ranks_for_url
+from db import save_ranks_for_url
 from re import match
 import logging
 
+'''
+crawl these pages: http://palatinusbridge.hu/mezhon/eredmenyek/
+'''
 class Palatinus(Crawler):
     def __init__(self, links=[], domains=[], delay=20.0, parse=HTMLLinkParser().parse, sort=FIFO):
         #call super constructor
@@ -27,8 +30,8 @@ class Palatinus(Crawler):
         result = False
         logging.debug('checking pattern:%s' % link.referrer + self.target_pattern)
         if match(link.referrer + self.target_pattern, link.url):
-            logging.debug('target found')
-            get_ranks_for_url(link.url)
+            logging.debug('target found:%s', link.url)
+            save_ranks_for_url(link.url)
 
         logging.debug('checking pattern:%s' % self.root_url + self.day_pattern)
         if match(self.root_url + self.day_pattern, link.url):
@@ -37,11 +40,13 @@ class Palatinus(Crawler):
 
         return result
 
+def crawl_url(url):
+    logging.info('crawling url:%s', url)
+    p = Palatinus(links=[url], delay=2)
+    while not p.done:
+        p.crawl(method=DEPTH, cached=False, throttle=1)
+
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
-    root_url = 'http://palatinusbridge.hu/mezhon/eredmenyek/2014palaered/'
-    logging.info('crawling root url:%s', root_url)
-    p = Palatinus(links=[root_url], delay=2)
-    while not p.done:
-        p.crawl(method=DEPTH, cached=False, throttle=1)
+    crawl_url('http://palatinusbridge.hu/mezhon/eredmenyek/2013palaered/')

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Title</title>
+<title>Palatinus Crawler</title>
 </head>
 <body>
   %include

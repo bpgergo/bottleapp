@@ -34,15 +34,18 @@ CHARSET=UTF8;
 
 create table alias(
 id serial not null,
-alias varchar(250) not null,
-name varchar(250) not null,
-generator varchar(250) ,
+name varchar(150) not null,
+alias1 varchar(150) not null,
+alias2 varchar(150) ,
+alias3 varchar(150) ,
+alias4 varchar(150) ,
+alias5 varchar(150) ,
+generator varchar(150) ,
 approved integer default 0,
 constraint pk_alias primary key (id),
-constraint uk_alias unique (alias, name, generator)
+constraint uniq_alias unique (name, alias1, alias2, alias3, alias4, alias5)
 )
 CHARSET=UTF8;
-
 
 
 
@@ -56,16 +59,21 @@ create table page (
 
 create table ranks (
   id serial not null,
-  page_id BIGINT UNSIGNED not null,
+  page_id BIGINT unsigned not null,
   rank integer not null,
   pair integer not null,
   score double not null,
   percentage double not null,
   tie integer,
-  name1 varchar(250) not null,
-  name2 varchar(250) not null,
-  name3 varchar(250),
-constraint pk_pair_rank primary key (id),
-constraint fk_pair_rank_page foreign key (page_id) references page(id)
+  original_name1 varchar(250) not null,
+  original_name2 varchar(250) not null,
+  original_name3 varchar(250),
+  name1_id bigint unsigned,
+  name2_id bigint unsigned,
+  name3_id bigint unsigned,
+constraint pk_ranks primary key (id),
+constraint fk_ranks_page foreign key (page_id) references page(id),
+constraint fk_ranks_name1 foreign key (name1_id) references nevek(id),
+constraint fk_ranks_name2 foreign key (name2_id) references nevek(id),
+constraint fk_ranks_name3 foreign key (name3_id) references nevek(id)
 ) CHARSET=UTF8;
-
