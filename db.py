@@ -295,8 +295,6 @@ def update_rank_with_aliases(rank, session=Session(), generator='difflib', all_a
     if change:
         logging.debug("%s update rank with values:%s", str(datetime.now()),
             str({"name1_id": rank.name1_id, "name2_id": rank.name2_id, "name3_id": rank.name3_id}))
-        ##session.query(Ranks).filter(Ranks.id == rank.id).update({
-        ##    "name1_id": rank.name1_id, "name2_id": rank.name2_id, "name3_id": rank.name3_id})
         session.commit()
         logging.debug("%s update rank finished" % str(datetime.now()))
 
