@@ -88,9 +88,9 @@ class Ranks(Base):
     name3_id = Column(Integer, ForeignKey('nevek.id'))
     page = relationship("Page", foreign_keys=page_id, lazy='subquery',
                         single_parent=True, backref=backref("ranks"), enable_typechecks=False)
-    name1 = relationship("Nevek", foreign_keys=name1_id, cascade=False)
-    name2 = relationship("Nevek", foreign_keys=name2_id, cascade=False)
-    name3 = relationship("Nevek", foreign_keys=name3_id, cascade=False)
+    name1 = relationship("Nevek", foreign_keys=name1_id, lazy='subquery', cascade=False)
+    name2 = relationship("Nevek", foreign_keys=name2_id, lazy='subquery', cascade=False)
+    name3 = relationship("Nevek", foreign_keys=name3_id, lazy='subquery', cascade=False)
 
     def __repr__(self):
         return "<Rank(id=%s, page_id=%s, name1='%s', name2='%s', name3='%s', score=%s, percentage=%s, rank=%s, tie='%s')>" % (

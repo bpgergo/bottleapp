@@ -43,9 +43,11 @@ def get_pages_for_crawl_url(url):
     session = Session()
     pages = []
     crawl = session.query(Crawl).filter(Crawl.url == url).first()
+    #crawl = engine.execute(Crawl.__table__.query().filter(Crawl.url == url).first())
     if crawl:
         pages = session.query(Page).filter(Page.crawl_id == crawl.id).all()
-    #session.close()
+        #pages = engine.execute(Page.__table__.query().filter(Page.crawl_id == crawl.id).all())
+    session.close()
     return pages
 
 def save_crawl(url):
@@ -123,7 +125,7 @@ def get_page_and_ranks_from_db(url):
     page_from_db = session.query(Page).filter(Page.url == url).first()
     if page_from_db:
         ranks = session.query(Ranks).filter(Ranks.page_id == page_from_db.id).all()
-        session.close()
+    session.close()
     return page_from_db, ranks
 
 '''
@@ -152,11 +154,11 @@ def get_ranks_for_url(url):
     page = session.query(Page).filter(Page.url == url).first()
     if page:
         ranks = session.query(Ranks).filter(Ranks.page_id == page.id).all()
-    #session.close()
+    session.close()
     return ranks
 
 
-def add_name(name, session=Session()):
+def add_name(name, session):
     if name:
         rec = Nevek()
         rec.name = clean_name(name)
@@ -189,7 +191,9 @@ def populate_names_from_all_ranks():
 
 def get_names_for_matching():
     session = Session()
-    return set([nevek.name for nevek in session.query(Nevek).all()])
+    result = set([nevek.name for nevek in session.query(Nevek).all()])
+    session.close()
+    return result
 
 
 def inner_save_alias(alias, session):
@@ -246,10 +250,10 @@ def save_alias(name, matches, generator, session):
         inner_save_alias(rec, session)
 
 
-def get_nevek_by_name(name, session=Session()):
+def get_nevek_by_name(name, session):
     return session.query(Nevek).filter(Nevek.name == name).first()
 
-def find_alias(name, session=Session(), generator='difflib', all_aliases = None):
+def find_alias(name, session, generator='difflib', all_aliases = None):
     if all_aliases:
         for alias in all_aliases:
             if ((alias.name == name or alias.alias1 == name or alias.alias2 == name
@@ -264,7 +268,7 @@ def find_alias(name, session=Session(), generator='difflib', all_aliases = None)
 '''
 update rank with unified names
 '''
-def update_rank_with_aliases(rank, session=Session(), generator='difflib', all_aliases = None):
+def update_rank_with_aliases(rank, session, generator='difflib', all_aliases = None):
     logging.debug("--- update rank with aliases start:%s", rank)
     change = False
     alias = find_alias(rank.original_name1, session, generator, all_aliases)
