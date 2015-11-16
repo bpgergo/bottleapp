@@ -93,8 +93,13 @@ class Ranks(Base):
     name3 = relationship("Nevek", foreign_keys=name3_id, lazy='subquery', cascade=False)
 
     def __repr__(self):
+        name1 = None if not self.original_name1 else self.original_name1.encode('utf-8')
+        name2 = None if not self.original_name2 else self.original_name2.encode('utf-8')
+        name3 = None if not self.original_name3 else self.original_name3.encode('utf-8')
         return "<Rank(id=%s, page_id=%s, name1='%s', name2='%s', name3='%s', score=%s, percentage=%s, rank=%s, tie='%s')>" % (
-            self.id, self.page_id, self.original_name1, self.original_name2, self.original_name3, self.score, self.percentage, self.rank, self.tie)
+            self.id, self.page_id,
+            name1, name2, name3,
+            self.score, self.percentage, self.rank, self.tie)
 
 
 if __name__ == '__main__':

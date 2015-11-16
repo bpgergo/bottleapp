@@ -419,10 +419,25 @@ def test_update_rank_with_aliases():
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     logging.info(datetime.now())
-    #update_ranks_with_aliases('difflib')
     session = Session()
-    update_ranks_with_aliases(session.query(Ranks).all(), session, 'difflib')
-    session.commit()
+    #update_ranks_with_aliases('difflib')
+    #update_ranks_with_aliases(session.query(Ranks).all(), session, 'difflib')
+    url = 'http://palatinusbridge.hu/mezhon/eredmenyek/2013palaered/csutortok/pc130905.htm'
+    page_from_db = session.query(Page).filter(Page.url == url).first()
+    print ('page from db', page_from_db)
+    if page_from_db:
+        ranks = session.query(Ranks).filter(Ranks.page_id == page_from_db.id).all()
+    for rank in ranks:
+        print (rank)
+    print ('------------------------------------------------')
+    valami = session.query(Ranks).join(Page, Ranks.page).filter(Page.url == url).all()
+    print (type(valami))
+    print (type(valami[0]))
+    print (valami[0])
+    print (valami[0].page)
+    #print (valami[1].Rank)
+
+    #session.commit()
     session.close()
     logging.info('finished', datetime.now())
 

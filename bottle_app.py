@@ -69,6 +69,7 @@ def crawl_url_async(url):
 
 #this will be imported and run by the wsgi.py (in hosted env)
 application = default_app()
+logging.basicConfig(level=logging.DEBUG)
 
 #this will be used when running on your own machine
 if __name__ == '__main__':
